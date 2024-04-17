@@ -3,7 +3,7 @@ name: Upload Website meme-game
 on:
   push:
     branches:
-    - master
+    - Slave
 
 jobs:
   deploy:
