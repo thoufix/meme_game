@@ -1,51 +1,19 @@
-name: Deploy to Raspberry Pi
+name: Upload Website meme-game
 
 on:
   push:
-    branches: [ main ]
-  workflow_dispatch:
-
-env:
-  FLASK_APP: app.py
+    branches:
+    - master
 
 jobs:
-  build:
-    runs-on: self-hosted
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Create new virtual env and activate it
-        run: |
-          python3 -m venv flask-env
-          source flask-env/bin/activate
-          python3 -m pip install -r requirements.txt
-
-      - name: Install Nginx
-        run: sudo apt-get update && sudo apt-get install -y nginx
-
-      - name: Copy Nginx configuration
-        run: sudo cp nginx.conf /etc/nginx/sites-available/myapp.conf
-
-      - name: Link Nginx configuration
-        run: sudo ln -s /etc/nginx/sites-available/myapp.conf /etc/nginx/sites-enabled/
-
-      - name: Test Nginx configuration
-        run: sudo nginx -t
-
-      - name: Reload Nginx
-        run: sudo systemctl reload nginx
-
   deploy:
-    runs-on: self-hosted
-    needs: build
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Kill Nginx
-        run: sudo systemctl stop nginx || true
-
-      - name: Start Nginx
-        run: sudo systemctl start nginx
-
-      - name: Run your application
-        run: python3 -m flask run --host=0.0.0.0 --port=4000
+    - uses: actions/checkout@master
+    - uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --acl public-read --follow-symlinks --delete --exclude '.git*/*'
+      env:
+        AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
